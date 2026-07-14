@@ -1,2 +1,0 @@
-LoL Spell Guesser 4.0.2
-Build personale offline/PWA
