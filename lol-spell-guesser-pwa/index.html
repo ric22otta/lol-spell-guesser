@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#091420">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Spell Guesser">
+  <meta name="description" content="Quiz personale sulle abilità di League of Legends.">
+  <title>LoL Spell Guesser</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css?v=4.0.2">
+</head>
+<body>
+  <div id="update-banner" class="update-banner" role="status">
+    È disponibile una nuova versione.
+    <button id="reload-update-btn" type="button">Aggiorna</button>
+  </div>
+
+  <main>
+    <section id="loading-screen" class="screen active loading-screen">
+      <img class="app-logo" src="icons/icon-192.png" alt="">
+      <h1>LoL Spell Guesser</h1>
+      <p id="loading-text" aria-live="polite">Inizializzazione dei sistemi Hextech…</p>
+      <div id="loading-spinner" class="spinner" aria-hidden="true"></div>
+      <button id="retry-load-btn" type="button" style="display:none">Riprova</button>
+    </section>
+
+    <section id="menu-screen" class="screen">
+      <header class="hero-header">
+        <div>
+          <p class="eyebrow">Hextech Training Grounds</p>
+          <h1>LoL Spell Guesser</h1>
+          <p class="subtitle">Riconosci il campione, indovina lo slot e ripassa gli errori.</p>
+        </div>
+        <div class="header-actions">
+          <span id="offline-badge" class="status-badge">Caricamento</span>
+          <button id="install-btn" type="button" class="small-btn">Installa app</button>
+        </div>
+      </header>
+
+      <section class="profile-panel panel">
+        <div class="profile-main">
+          <div class="level-orb"><span>LV</span><strong id="profile-level">1</strong></div>
+          <div class="profile-progress">
+            <div class="profile-heading"><strong id="profile-xp">0 XP</strong><span id="profile-xp-next">0/350</span></div>
+            <div class="xp-track"><div id="profile-xp-bar" class="xp-bar"></div></div>
+          </div>
+        </div>
+        <div class="profile-stats">
+          <div><strong id="profile-games">0</strong><span>Partite</span></div>
+          <div><strong id="profile-best-streak">0</strong><span>Combo record</span></div>
+          <div><strong id="profile-daily-streak">0</strong><span>Serie giorni</span></div>
+          <div><strong id="profile-review-count">0</strong><span>Errori salvati</span></div>
+        </div>
+        <div class="profile-actions">
+          <button id="achievements-btn" type="button">Obiettivi</button>
+          <button id="history-btn" type="button">Storico giornaliero</button>
+          <button id="export-data-btn" type="button" class="small-btn">Esporta dati</button>
+          <button id="import-data-btn" type="button" class="small-btn">Importa dati</button>
+          <button id="reset-data-btn" type="button" class="small-btn danger-outline">Azzera dati</button>
+          <input id="import-data-input" type="file" accept="application/json" hidden>
+        </div>
+      </section>
+
+      <section class="panel settings-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Configurazione</p>
+            <h2>Prepara la partita</h2>
+          </div>
+          <span id="modifier-summary" class="summary-pill">Nessun modificatore attivo</span>
+        </div>
+
+        <div class="settings-grid">
+          <label class="field-group">Durata partita
+            <select id="round-select">
+              <option value="10">10 abilità</option>
+              <option value="25" selected>25 abilità</option>
+              <option value="50">50 abilità</option>
+              <option value="infinite">Modalità infinita</option>
+            </select>
+          </label>
+          <label class="field-group">Filtro abilità
+            <select id="filter-select">
+              <option value="all">Tutte le abilità</option>
+              <option value="active">Solo attive Q/W/E/R</option>
+              <option value="P">Solo passive</option>
+              <option value="Q">Solo Q</option>
+              <option value="W">Solo W</option>
+              <option value="E">Solo E</option>
+              <option value="R">Solo ultimate</option>
+            </select>
+          </label>
+          <label class="field-group">Ruolo
+            <select id="role-filter">
+              <option value="all">Tutti i ruoli</option>
+              <option value="Assassin">Assassini</option>
+              <option value="Fighter">Combattenti</option>
+              <option value="Mage">Maghi</option>
+              <option value="Marksman">Tiratori</option>
+              <option value="Support">Supporti</option>
+              <option value="Tank">Tank</option>
+            </select>
+          </label>
+          <label class="field-group">Campione
+            <select id="champ-filter"><option value="all">Tutti i campioni</option></select>
+          </label>
+        </div>
+
+        <div class="modifier-section">
+          <h3>Modificatori visivi</h3>
+          <div class="modifier-grid">
+            <label class="modifier-card"><input type="checkbox" data-modifier="bw"><span><strong>Bianco e nero</strong><small>+50 pt</small></span></label>
+            <label class="modifier-card"><input type="checkbox" data-modifier="rotate"><span><strong>Rotazione casuale</strong><small>0°, 90°, 180° o 270° · +50 pt</small></span></label>
+            <label class="modifier-card"><input type="checkbox" data-modifier="blur"><span><strong>Sfocatura</strong><small>+75 pt</small></span></label>
+            <label class="modifier-card"><input type="checkbox" data-modifier="tiles"><span><strong>Tasselli coprenti</strong><small>+75 pt</small></span></label>
+            <label class="modifier-card"><input type="checkbox" data-modifier="zoom"><span><strong>Zoom parziale</strong><small>+75 pt</small></span></label>
+            <label class="modifier-card"><input type="checkbox" data-modifier="flash"><span><strong>Solo 1 secondo</strong><small>+100 pt</small></span></label>
+            <label class="modifier-card"><input type="checkbox" data-modifier="colorShift"><span><strong>Colori alterati</strong><small>+50 pt</small></span></label>
+          </div>
+        </div>
+
+        <div class="modifier-section">
+          <h3>Regole difficili</h3>
+          <div class="modifier-grid compact">
+            <label class="modifier-card"><input type="checkbox" data-modifier="noAutocomplete"><span><strong>Senza suggerimenti</strong><small>+50 pt</small></span></label>
+            <label class="modifier-card"><input type="checkbox" data-modifier="oneAnswer"><span><strong>Una sola risposta</strong><small>+100 pt</small></span></label>
+            <label class="modifier-card"><input id="audio-enabled" type="checkbox" checked><span><strong>Effetti sonori</strong><small>Puoi disattivarli anche in partita</small></span></label>
+          </div>
+        </div>
+
+        <div class="record-strip">
+          <span>🏆 Record Hardcore della configurazione</span>
+          <strong><span id="high-score-menu">0</span> pt</strong>
+        </div>
+      </section>
+
+      <section class="mode-grid">
+        <button id="practice-btn" type="button" class="mode-card"><span>🎯</span><strong>Pratica</strong><small>Indizi gratuiti e vite infinite</small></button>
+        <button id="hardcore-btn" type="button" class="mode-card"><span>⚔️</span><strong>Hardcore</strong><small>3 vite, record e bonus</small></button>
+        <button id="timed-btn" type="button" class="mode-card"><span>⚡</span><strong>A tempo</strong><small>60 secondi senza pause nel ritmo</small></button>
+        <button id="daily-btn" type="button" class="mode-card featured"><span>📅</span><strong id="daily-title">Sfida giornaliera</strong><small id="daily-status">Il primo tentativo sarà ufficiale</small></button>
+        <button id="review-btn" type="button" class="mode-card review"><span>📚</span><strong id="review-title">Ripassa errori</strong><small id="review-status">Le spell sbagliate tornano più spesso</small></button>
+      </section>
+
+      <footer class="app-footer">Versione <span id="app-version">4.0.0</span> · Data Dragon <span id="data-version">-</span> · Dati personali solo sul dispositivo</footer>
+    </section>
+
+    <section id="game-screen" class="screen game-screen">
+      <header id="hud" class="hud">
+        <span id="mode-label">Pratica</span>
+        <span id="score-display">Punti: 0</span>
+        <span id="accuracy-display">Precisione: 100%</span>
+        <span id="streak-display">Combo: x0</span>
+        <span id="timer-display"></span>
+        <span id="lives-display" class="lives"></span>
+      </header>
+      <div class="round-line"><span id="round-counter">Domanda 1</span><span id="remaining-counter">Nel mazzo: -</span></div>
+
+      <div id="ability-stage" class="ability-stage">
+        <img id="ability-img" src="" alt="Icona dell’abilità da indovinare">
+        <div id="tile-overlay" class="tile-overlay" aria-hidden="true"></div>
+        <div id="hidden-image-overlay" class="hidden-image-overlay" aria-hidden="true"><span>?</span></div>
+      </div>
+
+      <div id="feedback" class="feedback" data-tone="neutral" aria-live="polite">Chi è questo campione?</div>
+
+      <div class="hint-area">
+        <ul id="hint-list" class="hint-list"></ul>
+        <div id="hint-portrait-wrap" class="hint-portrait-wrap" style="display:none">
+          <img id="hint-portrait" src="" alt="Ritratto sfocato usato come indizio">
+          <span>Ritratto sfocato</span>
+        </div>
+      </div>
+
+      <div id="phase-1" class="phase-panel">
+        <div class="autocomplete-wrap">
+          <input id="guess-input" type="text" placeholder="Nome del campione…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-autocomplete="list" aria-controls="autocomplete-list">
+          <div id="autocomplete-list" class="autocomplete-list" role="listbox"></div>
+        </div>
+        <div class="action-row">
+          <button id="confirm-btn" type="button" class="primary-btn">Conferma</button>
+          <button id="hint-btn" type="button" class="info-btn">Indizio</button>
+          <button id="skip-champ-btn" type="button" class="danger-btn">Salta</button>
+        </div>
+      </div>
+
+      <div id="phase-2" class="phase-panel" style="display:none">
+        <p id="phase-2-instruction">Quale slot occupa questa abilità?</p>
+        <div id="ability-buttons" class="ability-buttons">
+          <button class="spell-btn" data-slot="P" type="button">P</button>
+          <button class="spell-btn" data-slot="Q" type="button">Q</button>
+          <button class="spell-btn" data-slot="W" type="button">W</button>
+          <button class="spell-btn" data-slot="E" type="button">E</button>
+          <button class="spell-btn" data-slot="R" type="button">R</button>
+        </div>
+        <article id="solution-card" class="solution-card">
+          <img id="solution-champ-img" src="" alt="Ritratto del campione">
+          <div><h3 id="solution-title">Soluzione</h3><p id="solution-meta"></p><p id="solution-description"></p></div>
+        </article>
+        <button id="next-spell-btn" type="button" class="primary-btn next-btn">Avanti</button>
+      </div>
+
+      <div class="game-controls">
+        <button id="pause-btn" type="button" class="small-btn">Pausa</button>
+        <button id="mute-btn" type="button" class="small-btn">Audio: ON</button>
+        <button id="quit-btn" type="button" class="small-btn danger-outline">Ritirati</button>
+      </div>
+    </section>
+
+    <section id="game-over-screen" class="screen game-over-screen">
+      <p class="eyebrow">Resoconto partita</p>
+      <h1>Partita terminata</h1>
+      <h2 id="game-over-title">Punteggio: 0</h2>
+      <p id="game-over-reason"></p>
+      <p id="new-record-text" class="record-message" style="display:none">✨ Nuovo record locale! ✨</p>
+      <div id="xp-result" class="xp-result">+0 XP</div>
+
+      <div class="stats-grid">
+        <div class="stat-card"><strong id="stat-faced">0</strong><span>Abilità viste</span></div>
+        <div class="stat-card"><strong id="stat-completed">0</strong><span>Completate</span></div>
+        <div class="stat-card"><strong id="stat-accuracy">0%</strong><span>Precisione</span></div>
+        <div class="stat-card"><strong id="stat-champs">0/0</strong><span>Campioni</span></div>
+        <div class="stat-card"><strong id="stat-slots">0/0</strong><span>Slot</span></div>
+        <div class="stat-card"><strong id="stat-max-streak">0</strong><span>Combo massima</span></div>
+        <div class="stat-card"><strong id="stat-hints">0</strong><span>Indizi</span></div>
+        <div class="stat-card"><strong id="stat-skips">0</strong><span>Salti</span></div>
+        <div class="stat-card"><strong id="stat-time">0:00</strong><span>Tempo</span></div>
+      </div>
+
+      <section id="daily-share-panel" class="result-panel" style="display:none">
+        <h3>Risultato giornaliero</h3>
+        <div id="daily-grid-result" class="daily-grid-result"></div>
+        <p id="daily-official-label"></p>
+        <button id="copy-daily-btn" type="button">Copia risultato</button>
+      </section>
+
+      <section id="unlocked-panel" class="result-panel" style="display:none">
+        <h3>Obiettivi sbloccati</h3>
+        <div id="unlocked-list"></div>
+      </section>
+
+      <section id="mistakes-panel" class="result-panel" style="display:none">
+        <h3>Errori aggiunti al ripasso</h3>
+        <div id="mistakes-list"></div>
+      </section>
+
+      <div class="final-actions">
+        <button id="replay-btn" type="button" class="primary-btn">Rigioca</button>
+        <button id="review-after-btn" type="button" style="display:none">Ripassa gli errori</button>
+        <button id="menu-btn" type="button">Torna al menu</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="pause-overlay" class="pause-overlay">
+    <div class="pause-card"><p class="eyebrow">Partita sospesa</p><h2>Pausa</h2><p>L’immagine resta nascosta finché non riprendi.</p><button id="resume-btn" type="button" class="primary-btn">Riprendi</button></div>
+  </div>
+
+  <div id="app-modal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button id="modal-close-btn" class="modal-close" type="button" aria-label="Chiudi">×</button>
+      <h2 id="modal-title">Dettagli</h2>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
+  <script type="module" src="js/app.js?v=4.0.2"></script>
+</body>
+</html>
