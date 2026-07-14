@@ -137,6 +137,98 @@ function cleanString(value) {
     .replace(/[^a-z0-9]/g, '');
 }
 
+let mobileViewportBaseline = Math.max(window.innerHeight, window.visualViewport?.height || 0);
+
+function isPhoneKeyboardLayout() {
+  return window.matchMedia('(pointer: coarse)').matches && window.innerWidth <= 900;
+}
+
+function phaseOneIsVisible() {
+  return dom['phase-1']?.style.display !== 'none';
+}
+
+function updateKeyboardViewport() {
+  const viewport = window.visualViewport;
+  const height = viewport?.height || window.innerHeight;
+  const offsetTop = viewport?.offsetTop || 0;
+  const inputFocused = document.activeElement === dom['guess-input'];
+
+  if (!inputFocused) {
+    mobileViewportBaseline = Math.max(mobileViewportBaseline, window.innerHeight, height + offsetTop);
+  }
+  const keyboardHeight = Math.max(0, mobileViewportBaseline - height - offsetTop);
+  const keyboardOpen = isPhoneKeyboardLayout() && inputFocused && keyboardHeight > 110;
+
+  document.documentElement.style.setProperty('--visual-viewport-height', `${Math.round(height)}px`);
+  document.documentElement.style.setProperty('--keyboard-height', `${Math.round(keyboardHeight)}px`);
+  document.body.classList.toggle('keyboard-open', keyboardOpen);
+}
+
+function focusGuessInput({ retry = true, scroll = true } = {}) {
+  const input = dom['guess-input'];
+  if (!input || state.paused || !dom['game-screen'].classList.contains('active') || !phaseOneIsVisible()) return;
+
+  try {
+    input.focus({ preventScroll: true });
+  } catch {
+    input.focus();
+  }
+
+  const length = input.value.length;
+  try { input.setSelectionRange(length, length); } catch { /* non necessario */ }
+  updateKeyboardViewport();
+
+  if (scroll && isPhoneKeyboardLayout()) {
+    requestAnimationFrame(() => {
+      dom['ability-stage']?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+  }
+
+  if (retry && document.activeElement !== input) {
+    setTimeout(() => focusGuessInput({ retry: false, scroll }), 120);
+  }
+}
+
+function closePhoneKeyboard() {
+  dom['phase-1']?.classList.remove('keyboard-prime');
+  hideAutocomplete();
+  dom['guess-input']?.blur();
+  document.body.classList.remove('keyboard-open');
+  updateKeyboardViewport();
+}
+
+function primeKeyboardForAutomaticNextRound() {
+  if (!isPhoneKeyboardLayout()) return;
+  const input = dom['guess-input'];
+  const phase = dom['phase-1'];
+  if (!input || !phase) return;
+
+  phase.classList.add('keyboard-prime');
+  try {
+    input.focus({ preventScroll: true });
+  } catch {
+    input.focus();
+  }
+  updateKeyboardViewport();
+}
+
+function bindMobileKeyboardLayout() {
+  updateKeyboardViewport();
+  window.visualViewport?.addEventListener('resize', updateKeyboardViewport);
+  window.visualViewport?.addEventListener('scroll', updateKeyboardViewport);
+  window.addEventListener('orientationchange', () => setTimeout(() => {
+    mobileViewportBaseline = Math.max(window.innerHeight, window.visualViewport?.height || 0);
+    updateKeyboardViewport();
+  }, 180));
+  dom['guess-input'].addEventListener('focus', () => {
+    updateKeyboardViewport();
+    if (isPhoneKeyboardLayout()) {
+      setTimeout(() => dom['ability-stage']?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 80);
+    }
+  });
+  dom['guess-input'].addEventListener('blur', () => setTimeout(updateKeyboardViewport, 80));
+}
+
 function hashString(value) {
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
@@ -423,6 +515,7 @@ function loadRound() {
   state.canAdvance = false;
   state.pendingGameOver = false;
 
+  dom['phase-1'].classList.remove('keyboard-prime');
   dom['phase-1'].style.display = 'block';
   dom['phase-2'].style.display = 'none';
   dom['ability-buttons'].style.display = 'none';
@@ -438,7 +531,8 @@ function loadRound() {
   updateHintButton();
   updateHud();
   setFeedback('Chi è questo campione?', 'neutral');
-  setTimeout(() => dom['guess-input'].focus(), 80);
+  focusGuessInput();
+  setTimeout(() => focusGuessInput({ retry: false, scroll: false }), 90);
   preloadUpcoming();
 }
 
@@ -593,6 +687,7 @@ function checkChampion() {
     animateAbility('correct');
     checkLifeBonuses('champion');
     setFeedback(`Esatto! È ${state.currentSpell.champ} (+${gained} pt)`, 'correct');
+    closePhoneKeyboard();
     dom['phase-1'].style.display = 'none';
     dom['phase-2'].style.display = 'block';
     dom['ability-buttons'].style.display = 'flex';
@@ -620,6 +715,7 @@ function checkChampion() {
   setFeedback(state.config.mode === 'hardcore'
     ? 'Sbagliato: hai perso una vita. Puoi continuare a provare senza perdere altre vite in questo turno.'
     : 'Sbagliato, riprova!', 'wrong');
+  focusGuessInput({ retry: false, scroll: false });
 }
 
 function updateHintButton() {
@@ -673,6 +769,7 @@ function getHint() {
   }
   updateHintButton();
   updateHud();
+  focusGuessInput({ retry: false, scroll: false });
 }
 
 function skipChampion() {
@@ -695,6 +792,7 @@ function skipChampion() {
 function revealRoundFailure(message, pendingGameOver) {
   state.pendingGameOver = pendingGameOver;
   state.roundResolved = true;
+  closePhoneKeyboard();
   state.canAdvance = true;
   revealAbilityImage();
   dom['phase-1'].style.display = 'none';
@@ -739,6 +837,23 @@ function checkAbilitySlot(slot) {
       }
     }
     completeRound();
+    const hasAnotherRound = !state.pendingGameOver
+      && (state.roundLimit === Infinity || state.stats.completed < state.roundLimit)
+      && !(state.config.mode === 'timed' && state.timeLeft <= 0);
+
+    // Safari su iPhone apre la tastiera soltanto se focus() avviene nello stesso
+    // gesto dell'utente. Sul telefono passiamo quindi subito al turno successivo
+    // direttamente dal tocco sul pulsante P/Q/W/E/R, senza usare setTimeout.
+    if (isPhoneKeyboardLayout()) {
+      updateHud();
+      if (hasAnotherRound) {
+        toast(`Corretta: ${state.currentSpell.champ} · ${state.currentSpell.slot} · ${state.currentSpell.spellName}`, 'correct', 2200);
+      }
+      advanceRound();
+      return;
+    }
+
+    if (hasAnotherRound) primeKeyboardForAutomaticNextRound();
     state.nextTimeoutId = setTimeout(advanceRound, 900);
   } else {
     document.querySelector(`[data-slot="${slot}"]`)?.classList.add('wrong');
@@ -828,6 +943,7 @@ function startTimer() {
 
 function pauseGame() {
   if (state.paused || !dom['game-screen'].classList.contains('active')) return;
+  closePhoneKeyboard();
   state.paused = true;
   state.pauseStartedAt = performance.now();
   dom['pause-overlay'].classList.add('active');
@@ -838,7 +954,7 @@ function resumeGame() {
   state.totalPausedMs += performance.now() - state.pauseStartedAt;
   state.paused = false;
   dom['pause-overlay'].classList.remove('active');
-  setTimeout(() => dom['guess-input'].focus(), 60);
+  setTimeout(() => focusGuessInput({ retry: false }), 60);
 }
 
 function toggleAudio() {
@@ -1019,6 +1135,7 @@ function renderDailyShare() {
 
 function gameOver(reason = 'Partita conclusa.') {
   if (!dom['game-screen'].classList.contains('active')) return;
+  closePhoneKeyboard();
   clearTimeout(state.nextTimeoutId);
   clearTimeout(state.flashTimeoutId);
   clearInterval(state.timerId);
@@ -1034,6 +1151,7 @@ function gameOver(reason = 'Partita conclusa.') {
 }
 
 function quitToMenu() {
+  closePhoneKeyboard();
   clearTimeout(state.nextTimeoutId);
   clearTimeout(state.flashTimeoutId);
   clearInterval(state.timerId);
@@ -1175,6 +1293,7 @@ export function initializeGameUi() {
   updateProfileMenu();
   updateRecordPreview();
   dom['data-version'].textContent = getDataVersion();
+  bindMobileKeyboardLayout();
 
   ['round-select', 'filter-select', 'role-filter', 'champ-filter', 'audio-enabled'].forEach(id => {
     dom[id].addEventListener('change', persistMenuSettings);

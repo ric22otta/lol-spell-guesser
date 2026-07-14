@@ -1,4 +1,4 @@
-export const APP_VERSION = '4.0.0';
+export const APP_VERSION = '4.0.2';
 
 export const STORAGE_KEYS = Object.freeze({
   profile: 'lol_guesser_profile_v4',

@@ -79,3 +79,11 @@ NOTE
 - La rotazione casuale comprende volutamente anche 0°.
 - Le abbreviazioni continuano volutamente a selezionare il primo campione compatibile nell'elenco.
 - La sfida giornaliera salva un solo tentativo ufficiale al giorno; le ripetizioni successive sono indicate come non ufficiali.
+
+TASTIERA AUTOMATICA SU IPHONE
+-----------------------------
+Dalla versione 4.0.1, durante la fase di riconoscimento del campione il campo viene attivato automaticamente e l'interfaccia si compatta quando la tastiera è aperta. La tastiera si chiude dopo aver indovinato il campione, per lasciare spazio alla scelta P/Q/W/E/R, e si riapre per la spell successiva.
+
+
+AGGIORNAMENTO 4.0.2 – TASTIERA IPHONE
+Su iPhone Safari non permette di aprire la tastiera da un timer. Per questo, quando tocchi P/Q/W/E/R, il turno successivo viene caricato immediatamente nello stesso tocco e il campo riceve subito il focus. Se sbagli lo slot, tocca Avanti: anche quel tocco apre direttamente la tastiera del turno successivo.
