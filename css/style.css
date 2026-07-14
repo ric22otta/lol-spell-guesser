@@ -431,3 +431,130 @@ select:focus, input[type="text"]:focus { border-color: var(--gold); box-shadow: 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Layout compatto durante la digitazione su telefono */
+.phase-panel.keyboard-prime {
+  position: fixed !important;
+  z-index: -1;
+  left: 0;
+  bottom: 0;
+  width: 2px !important;
+  height: 2px;
+  display: block !important;
+  overflow: hidden;
+  opacity: .01;
+  pointer-events: none;
+}
+.phase-panel.keyboard-prime .autocomplete-wrap {
+  width: 2px;
+  height: 2px;
+  margin: 0;
+}
+.phase-panel.keyboard-prime #guess-input {
+  width: 2px;
+  min-height: 2px;
+  height: 2px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.phase-panel.keyboard-prime .action-row,
+.phase-panel.keyboard-prime .autocomplete-list { display: none !important; }
+
+@media (pointer: coarse) and (max-width: 900px) {
+  body.keyboard-open {
+    min-height: var(--visual-viewport-height, 100dvh);
+    height: var(--visual-viewport-height, 100dvh);
+    padding-top: max(3px, var(--safe-top));
+    padding-bottom: 3px;
+    overflow: hidden;
+  }
+  body.keyboard-open main,
+  body.keyboard-open .game-screen.active {
+    height: 100%;
+    min-height: 0;
+  }
+  body.keyboard-open .game-screen.active {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+  body.keyboard-open .game-screen.active::-webkit-scrollbar { display: none; }
+  body.keyboard-open .hud {
+    position: static;
+    flex: 0 0 auto;
+    min-height: 27px;
+    padding: 4px 6px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    border-radius: 5px;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+  body.keyboard-open #accuracy-display,
+  body.keyboard-open #streak-display,
+  body.keyboard-open #timer-display { display: none; }
+  body.keyboard-open .round-line {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    font-size: 9px;
+  }
+  body.keyboard-open #remaining-counter { display: none; }
+  body.keyboard-open .ability-stage {
+    flex: 0 0 auto;
+    width: clamp(92px, calc(var(--visual-viewport-height, 430px) * .28), 126px);
+    height: clamp(92px, calc(var(--visual-viewport-height, 430px) * .28), 126px);
+    margin: 4px auto 2px;
+    border-width: 1px;
+    box-shadow: 0 0 14px rgba(0,90,130,.38);
+  }
+  body.keyboard-open .feedback {
+    flex: 0 0 auto;
+    min-height: 25px;
+    margin: 0 auto 1px;
+    padding: 2px 5px;
+    font-size: 12px;
+    line-height: 1.15;
+  }
+  body.keyboard-open .hint-area {
+    flex: 0 1 auto;
+    max-height: 48px;
+    margin-bottom: 2px;
+    overflow-y: auto;
+  }
+  body.keyboard-open .hint-list { gap: 2px; }
+  body.keyboard-open .hint-list li { padding: 3px 6px; font-size: 9px; }
+  body.keyboard-open .hint-portrait-wrap { display: none !important; }
+  body.keyboard-open #phase-1 {
+    flex: 0 0 auto;
+    margin-top: auto;
+  }
+  body.keyboard-open .autocomplete-wrap {
+    width: min(96%, 430px);
+    margin-bottom: 4px;
+  }
+  body.keyboard-open #guess-input {
+    min-height: 39px;
+    margin-top: 0;
+    padding: 8px 10px;
+    font-size: 16px;
+  }
+  body.keyboard-open .autocomplete-list {
+    top: auto;
+    bottom: calc(100% + 3px);
+    max-height: min(31vh, 145px);
+  }
+  body.keyboard-open .action-row {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+  body.keyboard-open .action-row button {
+    min-height: 34px;
+    padding: 5px 8px;
+    font-size: 9px;
+    letter-spacing: .2px;
+  }
+  body.keyboard-open .game-controls { display: none; }
+}
